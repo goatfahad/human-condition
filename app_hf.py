@@ -1,7 +1,10 @@
-"""Streamlit dashboard for Hugging Face Spaces — loads from parquet or demo mode."""
 from __future__ import annotations
 
 import json
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
+
 from pathlib import Path
 
 import numpy as np

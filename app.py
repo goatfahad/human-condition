@@ -1,12 +1,17 @@
-"""Streamlit dashboard for The Human Condition v2.0."""
 from __future__ import annotations
 
 import json
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
+
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+"""Streamlit dashboard for The Human Condition v2.0."""
 
 from human_condition.viz.charts import (
     apply_theme,
