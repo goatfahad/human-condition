@@ -1,0 +1,16 @@
+name: "human_condition"
+version: "1.0.0"
+config-version: 2
+profile: "human_condition"
+model-paths: ["models"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  human_condition:
+    staging:
+      +materialized: table
+    intermediate:
+      +materialized: table
+    marts:
+      +materialized: table

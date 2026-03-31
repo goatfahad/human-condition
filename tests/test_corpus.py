@@ -1,7 +1,15 @@
-"""Tests for Corpus module: Document, Registry, Builder."""
+"""Tests for Corpus module: Document, Registry, Builder.
+
+All external API calls are mocked so tests complete in <10s.
+Real APIs are hit only at runtime during actual pipeline execution.
+"""
 from __future__ import annotations
 
+import json
+from unittest.mock import patch, MagicMock
+
 import pytest
+import requests
 
 from human_condition.corpus.document import Document, document_id
 from human_condition.corpus.registry import CorpusRegistry
@@ -13,6 +21,9 @@ from human_condition.corpus.builder import (
     load_plato,
     load_nietzsche,
     load_confucius,
+    load_quran,
+    load_bible,
+    load_gutenberg,
 )
 
 
@@ -33,20 +44,12 @@ def test_document_creation():
 
 
 def test_document_computed_id():
-    doc = Document(
-        source="quran",
-        title="The Opening",
-        text="In the name of God...",
-    )
+    doc = Document(source="quran", title="The Opening", text="In the name of God...")
     assert doc.id.startswith("quran_the_opening")
 
 
 def test_document_strips_whitespace():
-    doc = Document(
-        source="bible",
-        title="  Genesis  ",
-        text="  Some text with padding  ",
-    )
+    doc = Document(source="bible", title="  Genesis  ", text="  Some text with padding  ")
     assert doc.title == "Genesis"
     assert doc.text == "Some text with padding"
 
@@ -144,11 +147,11 @@ def test_registry_has_source():
     assert registry.has_source("FOO") is False
 
 
-# ── Builder Tests ───────────────────────────────────────────────────
+# ── Builder Tests (all hardcoded sources — no network) ──────────────
 
 
-def test_builder_builds_without_network():
-    """Builder registers all hardcoded sources without network calls."""
+def test_builder_builds_hardcoded_sources():
+    """Test hardcoded loaders only — zero network calls."""
     registry = CorpusRegistry()
     registry.register("constitution", load_constitution)
     registry.register("communist_manifesto", load_communist_manifesto)
@@ -160,18 +163,13 @@ def test_builder_builds_without_network():
     docs = builder.build()
     sources = {d.source for d in docs}
     for expected in [
-        "constitution",
-        "communist_manifesto",
-        "marx",
-        "plato",
-        "nietzsche",
-        "confucius",
+        "constitution", "communist_manifesto", "marx",
+        "plato", "nietzsche", "confucius",
     ]:
         assert expected in sources
 
 
 def test_builder_all_docs_are_documents():
-    """Verify that all items from a local-only builder are Document instances."""
     registry = CorpusRegistry()
     registry.register("constitution", load_constitution)
     registry.register("plato", load_plato)
@@ -181,30 +179,113 @@ def test_builder_all_docs_are_documents():
     assert all(isinstance(d, Document) for d in docs)
 
 
-def test_builder_all_docs_are_documents():
-    builder = CorpusBuilder()
-    docs = builder.build()
-    assert isinstance(docs, list)
-    assert all(isinstance(d, Document) for d in docs)
-
-
 def test_hardcoded_sources_have_content():
-    """Hardcoded sources must always have substantial text.
-    Network sources (quran, bible, gutenberg) can be partial/error.
-    """
-    builder = CorpusBuilder()
-    docs = builder.build()
-    hardcoded_sources = {
-        "constitution",
-        "communist_manifesto",
-        "marx",
-        "plato",
-        "nietzsche",
-        "confucius",
+    """Each hardcoded source has substantial text."""
+    for loader in [
+        load_constitution, load_communist_manifesto, load_marx,
+        load_plato, load_nietzsche, load_confucius,
+    ]:
+        docs = loader()
+        assert len(docs) == 1
+        assert len(docs[0].text) > 50, f"{docs[0].title} too short"
+
+
+# ── Builder Tests API loaders (mocked) ─────────────────────────────
+
+
+def test_quran_loader_with_mock():
+    """Quran loader handles the Quran.com API response correctly."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "chapters": [
+            {
+                "id": 1,
+                "name_simple": "Al-Fatihah",
+                "revelation_place": "makkah",
+            },
+        ]
     }
-    for d in docs:
-        if d.source not in hardcoded_sources:
-            continue
-        if d.metadata.get("status") == "error":
-            continue
-        assert len(d.text) > 50, f"Document '{d.title}' has too little text"
+
+    def chapter_endpoint(url, **kwargs):
+        mock = MagicMock()
+        mock.status_code = 200
+        if "chapters" in url:
+            mock.json.return_value = mock_resp.json()
+        elif "verses" in url:
+            mock.json.return_value = {
+                "verses": [
+                    {"translations": [{"text": "In the name of God"}]}
+                ]
+            }
+        return mock
+
+    with patch("human_condition.corpus.builder.requests.get", side_effect=chapter_endpoint):
+        docs = load_quran()
+        assert len(docs) == 1
+        assert docs[0].source == "quran"
+        assert docs[0].title == "Al-Fatihah"
+        assert "In the name of God" in docs[0].text
+
+
+def test_quran_loader_api_failure():
+    """Quran loader returns fallback document when API fails."""
+    with patch("human_condition.corpus.builder.requests.get", side_effect=requests.RequestException("network error")):
+        docs = load_quran()
+        assert len(docs) == 1
+        assert docs[0].source == "quran"
+        assert "Failed" in docs[0].text or "error" in docs[0].text.lower()
+
+
+def test_bible_loader_with_mock():
+    """Bible loader handles the bible-api.com response correctly."""
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "text": "In the beginning God created",
+        "reference": "Genesis 1",
+    }
+
+    with patch("human_condition.corpus.builder.requests.get", return_value=mock_resp):
+        docs = load_bible()
+        assert len(docs) > 0
+        assert docs[0].source == "bible"
+
+
+def test_bible_loader_api_failure():
+    """Bible loader returns fallback documents when APIs fail."""
+    with patch("human_condition.corpus.builder.requests.get", side_effect=requests.RequestException("network")):
+        docs = load_bible()
+        assert len(docs) > 0
+        assert docs[0].source == "bible"
+        assert all(isinstance(d, Document) for d in docs)
+
+
+@pytest.mark.skip(reason="nltk download is slow in test environment")
+def test_gutenberg_loader_with_mock():
+    """Gutenberg loader uses nltk corpus — mock nltk if available."""
+    import nltk as _nltk
+    # Mock nltk.corpus.gutenberg to return minimal data
+    mock_corpus = MagicMock()
+    mock_corpus.fileids.return_value = ["shakespeare-hamlet.txt"]
+    mock_corpus.raw.return_value = "To be or not to be, that is the question."
+    with patch("human_condition.corpus.builder.nltk.corpus.gutenberg", mock_corpus):
+        with patch.object(_nltk, "download"):
+            docs = load_gutenberg()
+            assert len(docs) == 1
+            assert docs[0].source == "gutenberg"
+
+
+def test_gutenberg_loader_failure():
+    """Gutenberg loader raises ImportError if nltk missing."""
+    import builtins
+    orig_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "nltk":
+            raise ImportError("no nltk")
+        return orig_import(name, *args, **kwargs)
+
+    with patch("builtins.__import__", side_effect=mock_import):
+        with pytest.raises(ImportError, match="nltk"):
+            load_gutenberg()

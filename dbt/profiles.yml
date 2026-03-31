@@ -1,0 +1,3 @@
+dbt_config:
+  project: human-condition
+  target: duckdb
