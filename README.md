@@ -14,9 +14,9 @@ modern internet discourse.*
 [![Prefect](https://img.shields.io/badge/Orchestration-Prefect_2.x-blue?logo=prefect)](https://prefect.io)
 [![dbt](https://img.shields.io/badge/Transforms-dbt_DuckDB-orange?logo=dbt)](dbt/)
 [![TurboQuant](https://img.shields.io/badge/Compression-TurboQuant_arXiv:2504.19874-red)](https://arxiv.org/abs/2504.19874)
-[![HF Spaces](https://img.shields.io/badge/🤗_Live_Demo-Hugging_Face-orange)](https://huggingface.co/spaces/yourusername/human-condition)
+[![HF Spaces](https://img.shields.io/badge/🤗_Live_Demo-Hugging_Face-orange)](https://huggingface.co/spaces/goatfahad/human-condition)
 
-[🚀 **Live Demo**](https://huggingface.co/spaces/yourusername/human-condition) ·
+[🚀 **Live Demo**](https://huggingface.co/spaces/goatfahad/human-condition) ·
 [📝 **Full Write-up**](#) ·
 [📊 **Key Findings**](#-key-findings) ·
 [⚡ **Quickstart**](#-quickstart)
