@@ -1,0 +1,12 @@
+pyproject.toml
+src/human_condition/__init__.py
+src/human_condition.egg-info/PKG-INFO
+src/human_condition.egg-info/SOURCES.txt
+src/human_condition.egg-info/dependency_links.txt
+src/human_condition.egg-info/requires.txt
+src/human_condition.egg-info/top_level.txt
+src/human_condition/corpus/__init__.py
+src/human_condition/corpus/builder.py
+src/human_condition/corpus/document.py
+src/human_condition/corpus/registry.py
+tests/test_corpus.py

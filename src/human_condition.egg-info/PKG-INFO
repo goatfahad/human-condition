@@ -1,0 +1,29 @@
+Metadata-Version: 2.4
+Name: human-condition
+Version: 0.1.0
+Summary: 5,000 years of human writing through NLP, BERTopic, and TurboQuant compression
+Requires-Python: >=3.12
+Requires-Dist: numpy>=1.26
+Requires-Dist: requests>=2.31
+Requires-Dist: nltk>=3.9
+Requires-Dist: sentence-transformers>=3.0
+Requires-Dist: bertopic>=0.16
+Requires-Dist: umap-learn>=0.5
+Requires-Dist: transformers>=4.40
+Requires-Dist: torch>=2.3
+Requires-Dist: duckdb>=1.0
+Requires-Dist: plotly>=5.22
+Requires-Dist: streamlit>=1.35
+Requires-Dist: apache-airflow>=2.9
+Requires-Dist: openlineage-python>=1.20
+Requires-Dist: dbt-core>=1.8
+Requires-Dist: dbt-duckdb>=1.8
+Requires-Dist: pydantic>=2.7
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: praw>=7.7
+Provides-Extra: dev
+Requires-Dist: pytest>=8.2; extra == "dev"
+Requires-Dist: pytest-cov>=5.0; extra == "dev"
+Requires-Dist: ruff>=0.4; extra == "dev"
+Requires-Dist: mypy>=1.10; extra == "dev"
+Requires-Dist: httpx>=0.27; extra == "dev"
