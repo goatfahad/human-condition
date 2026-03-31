@@ -133,7 +133,7 @@ to real semantic search data.*
 ## ⚡ Quickstart
 
 ```bash
-git clone https://github.com/yourusername/human-condition
+git clone https://github.com/goatfahad/human-condition
 cd human-condition
 pip install -r requirements.txt
 python pipeline/run_all.py   # ~30-60 min first run (downloads models + data)
