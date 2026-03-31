@@ -41,12 +41,23 @@ def _fit_topics(data: dict) -> dict:
     embeddings = np.array(data["embeddings"], dtype=np.float32)
     texts = data["texts"]
 
+    # Filter out placeholder/invalid text and ensure type safety
+    valid_mask = []
+    for i, t in enumerate(texts):
+        txt = str(t) if t is not None else ""
+        texts[i] = txt
+        valid_mask.append("[failed to fetch]" not in txt and len(txt.strip()) > 3)
+
+    embeddings = embeddings[valid_mask]
+    texts = [t for i, t in enumerate(texts) if valid_mask[i]]
+    print(f"Filtered texts: {len(texts)} valid (from {len(valid_mask)} total)")
+
     topic_model = BERTopic(
         language="english",
-        calculate_probabilities=True,
+        calculate_probabilities=False,
         verbose=True,
         nr_topics="auto",
-        min_topic_size=max(5, len(texts) // 50),
+        min_topic_size=max(10, len(texts) // 200),
     )
     topics, probs = topic_model.fit_transform(embeddings, texts)
     topic_info = topic_model.get_topic_info()

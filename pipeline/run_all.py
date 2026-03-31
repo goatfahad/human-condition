@@ -17,11 +17,12 @@ from __future__ import annotations
 
 import sys
 import time
+import importlib.util
 from pathlib import Path
 
 PIPELINE_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(PIPELINE_DIR.parent / "src"))
-
+PROJECT_ROOT = PIPELINE_DIR.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 FLOWS = [
     ("01_ingest", "ingest_corpus", "Download and cache raw corpora"),
@@ -33,6 +34,18 @@ FLOWS = [
 ]
 
 
+def _load_flow_module(module_name: str):
+    """Dynamically load a pipeline module (handles digit-starting names)."""
+    flow_path = PIPELINE_DIR / f"{module_name}.py"
+    spec = importlib.util.spec_from_file_location(f"pipeline_mod_{module_name}", flow_path)
+    if spec is None or spec.loader is None:
+        raise FileNotFoundError(f"Cannot find {flow_path}")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[f"pipeline_mod_{module_name}"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def run_flow(module_name: str, flow_name: str, description: str) -> bool:
     """Import and run a single Prefect flow with error handling."""
     print(f"\n{'=' * 70}")
@@ -40,7 +53,7 @@ def run_flow(module_name: str, flow_name: str, description: str) -> bool:
     print(f"{'=' * 70}")
 
     try:
-        module = __import__(f"pipeline.{module_name}", fromlist=[flow_name])
+        module = _load_flow_module(module_name)
         flow_fn = getattr(module, flow_name)
         result = flow_fn()
         print(f"  OK: {module_name} completed with result: {result}")
